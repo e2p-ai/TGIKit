@@ -2,7 +2,6 @@
 import PackageDescription
 
 /// Shared iOS foundation for TGI apps (ECP, ERP, Fides, Vitae, E2P IDE).
-/// Auth token helpers + Keychain — one place for session survival rules.
 let package = Package(
     name: "TGIKit",
     platforms: [
@@ -17,10 +16,10 @@ let package = Package(
             name: "TGIKit",
             path: "Sources/TGIKit"
         ),
-        .testTarget(
-            name: "TGIKitTests",
+        .executableTarget(
+            name: "TGIKitSmoke",
             dependencies: ["TGIKit"],
-            path: "Tests/TGIKitTests"
+            path: "Sources/TGIKitSmoke"
         ),
     ]
 )
