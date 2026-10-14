@@ -1,0 +1,46 @@
+name: pr-hygiene
+on:
+  schedule:
+    - cron: "0 13 * * 1"   # Mondays 6:00 AM AZ
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  close-shipped:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - name: Close pull requests whose changes are already on the default branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          base=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+          git fetch -q origin "$base"
+          base_tree=$(git rev-parse "origin/$base^{tree}")
+          gh pr list --state open --limit 300 --json number,labels \
+            --jq '.[] | select([.labels[].name] | index("keep-open") | not) | .number' |
+          while read -r n; do
+            git fetch -q origin "pull/$n/head" || continue
+            merged=$(git merge-tree --write-tree "origin/$base" FETCH_HEAD 2>/dev/null | head -1) || continue
+            if [ "$merged" = "$base_tree" ]; then
+              gh pr close "$n" --comment "pr-hygiene: everything in this pull request is already on $base (merging it changes nothing), so it is closed. Add the keep-open label and reopen it if that is wrong."
+            fi
+          done
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 14
+          days-before-pr-close: 7
+          stale-pr-label: stale
+          exempt-pr-labels: keep-open
+          stale-pr-message: "pr-hygiene: no activity for 14 days. This pull request closes in 7 days unless it gets a commit, a comment or the keep-open label."
+          close-pr-message: "pr-hygiene: closed after 21 days without activity. The branch is kept."
+          delete-branch: false
