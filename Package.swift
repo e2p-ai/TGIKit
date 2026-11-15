@@ -10,11 +10,16 @@ let package = Package(
     ],
     products: [
         .library(name: "TGIKit", targets: ["TGIKit"]),
+        .library(name: "TGIRuntimeShield", targets: ["TGIRuntimeShield"]),
     ],
     targets: [
         .target(
             name: "TGIKit",
             path: "Sources/TGIKit"
+        ),
+        .target(
+            name: "TGIRuntimeShield",
+            path: "Sources/TGIRuntimeShield"
         ),
         .executableTarget(
             name: "TGIKitSmoke",
